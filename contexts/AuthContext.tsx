@@ -20,12 +20,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
+        // Get initial session with error handling
+        supabase.auth.getSession()
+            .then(({ data: { session } }) => {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error('Failed to get session:', error);
+                setLoading(false); // Still set loading to false so app renders
+            });
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
