@@ -106,6 +106,64 @@ export const deleteUserSchedule = async (userId: string): Promise<boolean> => {
 };
 
 /**
+ * Detect activity type based on keywords in the activity name
+ */
+export const detectActivityType = (activityName: string): ActivityType => {
+    const lower = activityName.toLowerCase();
+
+    // Fitness & Health
+    if (lower.includes('workout') || lower.includes('exercise')) return ActivityType.WORKOUT;
+    if (lower.includes('gym') || lower.includes('weight')) return ActivityType.GYM;
+    if (lower.includes('yoga') || lower.includes('stretching')) return ActivityType.YOGA;
+    if (lower.includes('walk') || lower.includes('walking')) return ActivityType.WALK;
+    if (lower.includes('run') || lower.includes('jog')) return ActivityType.RUNNING;
+    if (lower.includes('sport') || lower.includes('game') || lower.includes('play')) return ActivityType.SPORTS;
+
+    // Learning & Education
+    if (lower.includes('class') && !lower.includes('master')) return ActivityType.CLASS;
+    if (lower.includes('lecture') || lower.includes('seminar')) return ActivityType.LECTURE;
+    if (lower.includes('deep study') || lower.includes('focus study') || lower.includes('deep work')) return ActivityType.DEEP_STUDY;
+    if (lower.includes('read')) return ActivityType.READING;
+    if (lower.includes('homework') || lower.includes('assignment')) return ActivityType.HOMEWORK;
+    if (lower.includes('exam') || lower.includes('test prep')) return ActivityType.EXAM_PREP;
+    if (lower.includes('course') || lower.includes('tutorial')) return ActivityType.ONLINE_COURSE;
+    if (lower.includes('study')) return ActivityType.STUDY;
+
+    // Work & Productivity
+    if (lower.includes('meeting') || lower.includes('call') || lower.includes('standup')) return ActivityType.MEETING;
+    if (lower.includes('coding') || lower.includes('programming') || lower.includes('code')) return ActivityType.CODING;
+    if (lower.includes('writ') || lower.includes('blog') || lower.includes('content')) return ActivityType.WRITING;
+    if (lower.includes('project')) return ActivityType.PROJECT;
+    if (lower.includes('research')) return ActivityType.RESEARCH;
+    if (lower.includes('office') || lower.includes('work from office')) return ActivityType.OFFICE;
+    if (lower.includes('work')) return ActivityType.WORK;
+
+    // Personal & Daily
+    if (lower.includes('morning') || lower.includes('routine') || lower.includes('wake')) return ActivityType.MORNING_ROUTINE;
+    if (lower.includes('breakfast')) return ActivityType.BREAKFAST;
+    if (lower.includes('lunch')) return ActivityType.LUNCH;
+    if (lower.includes('dinner') || lower.includes('supper')) return ActivityType.DINNER;
+    if (lower.includes('break') || lower.includes('rest') || lower.includes('relax')) return ActivityType.BREAK;
+    if (lower.includes('nap') || lower.includes('sleep')) return ActivityType.NAP;
+    if (lower.includes('meditat') || lower.includes('mindful')) return ActivityType.MEDITATION;
+    if (lower.includes('commute') || lower.includes('travel') || lower.includes('drive')) return ActivityType.COMMUTE;
+
+    // Creative & Hobbies
+    if (lower.includes('music') || lower.includes('guitar') || lower.includes('piano') || lower.includes('practice')) return ActivityType.MUSIC;
+    if (lower.includes('art') || lower.includes('draw') || lower.includes('paint')) return ActivityType.ART;
+    if (lower.includes('gaming') || lower.includes('video game')) return ActivityType.GAMING;
+    if (lower.includes('side project') || lower.includes('personal project')) return ActivityType.SIDE_PROJECT;
+
+    // Social & Family
+    if (lower.includes('family') || lower.includes('kids') || lower.includes('children')) return ActivityType.FAMILY_TIME;
+    if (lower.includes('social') || lower.includes('friends') || lower.includes('hangout')) return ActivityType.SOCIAL;
+    if (lower.includes('phone') || lower.includes('calls')) return ActivityType.PHONE_CALLS;
+
+    // Default
+    return ActivityType.OTHER;
+};
+
+/**
  * Parse a timetable text into schedule blocks
  */
 export const parseTimetableText = (text: string): ScheduleBlock[] => {
@@ -121,19 +179,8 @@ export const parseTimetableText = (text: string): ScheduleBlock[] => {
             const [, start, end, activity] = match;
             const activityTrimmed = activity.trim();
 
-            // Auto-detect activity type
-            let type = ActivityType.STUDY;
-            const lowerActivity = activityTrimmed.toLowerCase();
-
-            if (lowerActivity.includes('workout') || lowerActivity.includes('gym') || lowerActivity.includes('exercise')) {
-                type = ActivityType.WORKOUT;
-            } else if (lowerActivity.includes('class') || lowerActivity.includes('lecture')) {
-                type = ActivityType.CLASS;
-            } else if (lowerActivity.includes('deep') || lowerActivity.includes('focus')) {
-                type = ActivityType.DEEP_STUDY;
-            } else if (lowerActivity.includes('walk') || lowerActivity.includes('break') || lowerActivity.includes('rest')) {
-                type = ActivityType.WALK;
-            }
+            // Auto-detect activity type based on keywords
+            const type = detectActivityType(activityTrimmed);
 
             schedule.push({
                 id: `custom-${index + 1}`,
@@ -233,19 +280,8 @@ export const parseExcelFile = async (file: File): Promise<ScheduleBlock[]> => {
                     cell.trim().length > 0
                 ) || 'Activity';
 
-                // Auto-detect activity type
-                let type = ActivityType.STUDY;
-                const lowerActivity = activity.toLowerCase();
-
-                if (lowerActivity.includes('workout') || lowerActivity.includes('gym') || lowerActivity.includes('exercise')) {
-                    type = ActivityType.WORKOUT;
-                } else if (lowerActivity.includes('class') || lowerActivity.includes('lecture')) {
-                    type = ActivityType.CLASS;
-                } else if (lowerActivity.includes('deep') || lowerActivity.includes('focus')) {
-                    type = ActivityType.DEEP_STUDY;
-                } else if (lowerActivity.includes('walk') || lowerActivity.includes('break') || lowerActivity.includes('rest') || lowerActivity.includes('lunch')) {
-                    type = ActivityType.WALK;
-                }
+                // Auto-detect activity type using the centralized function
+                const type = detectActivityType(activity);
 
                 blockIndex++;
                 schedule.push({
@@ -328,19 +364,7 @@ export const parsePDFFile = async (file: File): Promise<ScheduleBlock[]> => {
                         end = end.padStart(5, '0');
 
                         const activity = match[3]?.trim() || 'Activity';
-
-                        let type = ActivityType.STUDY;
-                        const lowerActivity = activity.toLowerCase();
-
-                        if (lowerActivity.includes('workout') || lowerActivity.includes('gym') || lowerActivity.includes('exercise')) {
-                            type = ActivityType.WORKOUT;
-                        } else if (lowerActivity.includes('class') || lowerActivity.includes('lecture')) {
-                            type = ActivityType.CLASS;
-                        } else if (lowerActivity.includes('deep') || lowerActivity.includes('focus')) {
-                            type = ActivityType.DEEP_STUDY;
-                        } else if (lowerActivity.includes('walk') || lowerActivity.includes('break') || lowerActivity.includes('rest')) {
-                            type = ActivityType.WALK;
-                        }
+                        const type = detectActivityType(activity);
 
                         blockIndex++;
                         schedule.push({

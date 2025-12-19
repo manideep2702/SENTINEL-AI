@@ -10,12 +10,59 @@ interface ScheduleEditorProps {
     isFirstTime?: boolean;
 }
 
+// Organized activity types with icons
 const ACTIVITY_TYPES = [
-    { value: ActivityType.WORKOUT, label: '🏋️ Workout', color: 'emerald' },
-    { value: ActivityType.CLASS, label: '📚 Class', color: 'blue' },
-    { value: ActivityType.DEEP_STUDY, label: '🧠 Deep Study', color: 'purple' },
-    { value: ActivityType.STUDY, label: '📖 Study', color: 'amber' },
-    { value: ActivityType.WALK, label: '🚶 Walk/Break', color: 'pink' },
+    // Fitness & Health
+    { value: ActivityType.WORKOUT, label: '🏋️ Workout' },
+    { value: ActivityType.GYM, label: '💪 Gym' },
+    { value: ActivityType.YOGA, label: '🧘 Yoga' },
+    { value: ActivityType.WALK, label: '🚶 Walk' },
+    { value: ActivityType.RUNNING, label: '🏃 Running' },
+    { value: ActivityType.SPORTS, label: '⚽ Sports' },
+
+    // Learning & Education
+    { value: ActivityType.CLASS, label: '📚 Class' },
+    { value: ActivityType.LECTURE, label: '🎓 Lecture' },
+    { value: ActivityType.STUDY, label: '📖 Study' },
+    { value: ActivityType.DEEP_STUDY, label: '🧠 Deep Study' },
+    { value: ActivityType.READING, label: '📕 Reading' },
+    { value: ActivityType.HOMEWORK, label: '✏️ Homework' },
+    { value: ActivityType.EXAM_PREP, label: '📝 Exam Prep' },
+    { value: ActivityType.ONLINE_COURSE, label: '💻 Online Course' },
+
+    // Work & Productivity
+    { value: ActivityType.WORK, label: '💼 Work' },
+    { value: ActivityType.MEETING, label: '👥 Meeting' },
+    { value: ActivityType.CODING, label: '👨‍💻 Coding' },
+    { value: ActivityType.WRITING, label: '✍️ Writing' },
+    { value: ActivityType.PROJECT, label: '📋 Project' },
+    { value: ActivityType.RESEARCH, label: '🔬 Research' },
+    { value: ActivityType.OFFICE, label: '🏢 Office' },
+
+    // Personal & Daily
+    { value: ActivityType.MORNING_ROUTINE, label: '🌅 Morning Routine' },
+    { value: ActivityType.BREAKFAST, label: '🍳 Breakfast' },
+    { value: ActivityType.LUNCH, label: '🍽️ Lunch' },
+    { value: ActivityType.DINNER, label: '🍲 Dinner' },
+    { value: ActivityType.BREAK, label: '☕ Break' },
+    { value: ActivityType.NAP, label: '😴 Nap' },
+    { value: ActivityType.MEDITATION, label: '🧘‍♂️ Meditation' },
+    { value: ActivityType.COMMUTE, label: '🚗 Commute' },
+
+    // Creative & Hobbies
+    { value: ActivityType.MUSIC, label: '🎵 Music' },
+    { value: ActivityType.ART, label: '🎨 Art' },
+    { value: ActivityType.GAMING, label: '🎮 Gaming' },
+    { value: ActivityType.SIDE_PROJECT, label: '🚀 Side Project' },
+
+    // Social & Family
+    { value: ActivityType.FAMILY_TIME, label: '👨‍👩‍👧 Family Time' },
+    { value: ActivityType.SOCIAL, label: '🤝 Social' },
+    { value: ActivityType.PHONE_CALLS, label: '📞 Phone Calls' },
+
+    // Other
+    { value: ActivityType.OTHER, label: '📌 Other' },
+    { value: ActivityType.CUSTOM, label: '✨ Custom' },
 ];
 
 type InputMode = 'manual' | 'paste' | 'upload';
@@ -164,8 +211,8 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({
                         <button
                             onClick={() => setInputMode('manual')}
                             className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${inputMode === 'manual'
-                                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                                    : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'
+                                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'
                                 }`}
                         >
                             <iconify-icon icon="lucide:edit-3" width="14"></iconify-icon>
@@ -174,8 +221,8 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({
                         <button
                             onClick={() => setInputMode('paste')}
                             className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${inputMode === 'paste'
-                                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                                    : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'
+                                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'
                                 }`}
                         >
                             <iconify-icon icon="lucide:clipboard-paste" width="14"></iconify-icon>
@@ -184,8 +231,8 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({
                         <button
                             onClick={() => setInputMode('upload')}
                             className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${inputMode === 'upload'
-                                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                                    : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'
+                                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'
                                 }`}
                         >
                             <iconify-icon icon="lucide:file-up" width="14"></iconify-icon>

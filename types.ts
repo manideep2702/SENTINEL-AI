@@ -5,29 +5,75 @@ declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       'iconify-icon': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-          icon?: string;
-          width?: string | number;
-          className?: string;
+        icon?: string;
+        width?: string | number;
+        className?: string;
       };
     }
   }
 }
 
 export enum ActivityType {
+  // Fitness & Health
   WORKOUT = 'Workout',
+  GYM = 'Gym',
+  YOGA = 'Yoga',
+  WALK = 'Walk',
+  RUNNING = 'Running',
+  SPORTS = 'Sports',
+
+  // Learning & Education  
   CLASS = 'Class',
-  DEEP_STUDY = 'Deep Study',
+  LECTURE = 'Lecture',
   STUDY = 'Study',
-  WALK = 'Park Walk',
-  OTHER = 'Other'
+  DEEP_STUDY = 'Deep Study',
+  READING = 'Reading',
+  HOMEWORK = 'Homework',
+  EXAM_PREP = 'Exam Prep',
+  ONLINE_COURSE = 'Online Course',
+
+  // Work & Productivity
+  WORK = 'Work',
+  MEETING = 'Meeting',
+  CODING = 'Coding',
+  WRITING = 'Writing',
+  PROJECT = 'Project',
+  RESEARCH = 'Research',
+  OFFICE = 'Office',
+
+  // Personal & Daily
+  MORNING_ROUTINE = 'Morning Routine',
+  BREAKFAST = 'Breakfast',
+  LUNCH = 'Lunch',
+  DINNER = 'Dinner',
+  BREAK = 'Break',
+  NAP = 'Nap',
+  MEDITATION = 'Meditation',
+  COMMUTE = 'Commute',
+
+  // Creative & Hobbies
+  MUSIC = 'Music',
+  ART = 'Art',
+  GAMING = 'Gaming',
+  SIDE_PROJECT = 'Side Project',
+
+  // Social & Family
+  FAMILY_TIME = 'Family Time',
+  SOCIAL = 'Social',
+  PHONE_CALLS = 'Phone Calls',
+
+  // Other
+  OTHER = 'Other',
+  CUSTOM = 'Custom'
 }
 
 export interface ScheduleBlock {
   id: string;
   start: string; // HH:MM
   end: string; // HH:MM
-  activity: string;
-  type: ActivityType;
+  activity: string; // Can be any custom activity name
+  type?: ActivityType; // Optional - for categorization
+  color?: string; // Optional custom color
 }
 
 export interface VerificationResult {
