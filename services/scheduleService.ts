@@ -307,20 +307,24 @@ export const parseExcelFile = async (file: File): Promise<ScheduleBlock[]> => {
 
 /**
  * Parse PDF file into schedule blocks
+ * Uses multiple strategies to extract text from PDF
  */
 export const parsePDFFile = async (file: File): Promise<ScheduleBlock[]> => {
+    console.log('📄 Starting PDF parsing for:', file.name);
+
+    let fullText = '';
+
+    // Strategy 1: Try using pdfjs-dist
     try {
-        // Dynamically import pdfjs
         const pdfjsLib = await import('pdfjs-dist');
 
-        // Set worker source
+        // Set worker source from CDN - use .mjs for modern browsers
         pdfjsLib.GlobalWorkerOptions.workerSrc =
-            `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+            `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
         const buffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-
-        let fullText = '';
+        const loadingTask = pdfjsLib.getDocument({ data: buffer });
+        const pdf = await loadingTask.promise;
 
         // Extract text from all pages
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -332,63 +336,96 @@ export const parsePDFFile = async (file: File): Promise<ScheduleBlock[]> => {
             fullText += pageText + '\n';
         }
 
-        console.log('📄 Extracted PDF text:', fullText.substring(0, 500));
+        console.log('📄 Extracted PDF text (pdfjs):', fullText.substring(0, 300));
+    } catch (pdfError) {
+        console.warn('⚠️ pdfjs-dist failed:', pdfError);
 
-        // Parse the extracted text
-        const schedule = parseTimetableText(fullText);
-
-        // If simple parsing didn't work well, try more patterns
-        if (schedule.length === 0) {
-            // Try alternate patterns
-            const lines = fullText.split(/[\n\r]+/);
-            let blockIndex = 0;
-
-            lines.forEach(line => {
-                // Pattern: Time followed by activity
-                const patterns = [
-                    /(\d{1,2}[:.]\d{2})\s*(?:AM|PM|am|pm)?\s*[-–to]+\s*(\d{1,2}[:.]\d{2})\s*(?:AM|PM|am|pm)?\s*[:\-–\s]*(.+)/i,
-                    /(\d{1,2})\s*(?:AM|PM|am|pm)\s*[-–to]+\s*(\d{1,2})\s*(?:AM|PM|am|pm)\s*[:\-–\s]*(.+)/i,
-                ];
-
-                for (const pattern of patterns) {
-                    const match = line.match(pattern);
-                    if (match) {
-                        let start = match[1].replace('.', ':');
-                        let end = match[2].replace('.', ':');
-
-                        // Add :00 if only hour
-                        if (!start.includes(':')) start += ':00';
-                        if (!end.includes(':')) end += ':00';
-
-                        start = start.padStart(5, '0');
-                        end = end.padStart(5, '0');
-
-                        const activity = match[3]?.trim() || 'Activity';
-                        const type = detectActivityType(activity);
-
-                        blockIndex++;
-                        schedule.push({
-                            id: `pdf-${blockIndex}`,
-                            start,
-                            end,
-                            activity,
-                            type
-                        });
-                        break;
-                    }
-                }
-            });
+        // Strategy 2: Try reading PDF as raw text (works for some simple PDFs)
+        try {
+            const rawText = await file.text();
+            // Extract text from PDF literal strings
+            const textMatches = rawText.match(/\(([^)]{2,100})\)/g);
+            if (textMatches && textMatches.length > 0) {
+                fullText = textMatches
+                    .map(m => m.slice(1, -1))
+                    .filter(t => /[a-zA-Z0-9]/.test(t))
+                    .join(' ');
+                console.log('📄 Extracted PDF text (raw):', fullText.substring(0, 300));
+            }
+        } catch (rawError) {
+            console.warn('⚠️ Raw PDF extraction failed:', rawError);
         }
-
-        // Sort by start time
-        schedule.sort((a, b) => a.start.localeCompare(b.start));
-
-        console.log('📄 Parsed PDF schedule:', schedule);
-        return schedule;
-    } catch (error) {
-        console.error('Error parsing PDF file:', error);
-        throw new Error('Failed to parse PDF file. Please check the format.');
     }
+
+    // If no text was extracted, throw helpful error
+    if (!fullText || fullText.trim().length < 10) {
+        throw new Error(
+            'Could not extract text from this PDF.\n\n' +
+            'Try one of these alternatives:\n' +
+            '• Use the "Paste" tab - copy text from your PDF and paste it\n' +
+            '• Use Excel format (.xlsx) instead\n' +
+            '• Enter your schedule manually'
+        );
+    }
+
+    // Parse the extracted text
+    let schedule = parseTimetableText(fullText);
+
+    // If simple parsing didn't work, try more patterns
+    if (schedule.length === 0) {
+        const lines = fullText.split(/[\n\r]+/);
+        let blockIndex = 0;
+
+        lines.forEach(line => {
+            const patterns = [
+                /(\d{1,2}[:.]\d{2})\s*(?:AM|PM|am|pm)?\s*[-–to]+\s*(\d{1,2}[:.]\d{2})\s*(?:AM|PM|am|pm)?\s*[:\-–\s]*(.+)/i,
+                /(\d{1,2})\s*(?:AM|PM|am|pm)\s*[-–to]+\s*(\d{1,2})\s*(?:AM|PM|am|pm)\s*[:\-–\s]*(.+)/i,
+            ];
+
+            for (const pattern of patterns) {
+                const match = line.match(pattern);
+                if (match) {
+                    let start = match[1].replace('.', ':');
+                    let end = match[2].replace('.', ':');
+
+                    if (!start.includes(':')) start += ':00';
+                    if (!end.includes(':')) end += ':00';
+
+                    start = start.padStart(5, '0');
+                    end = end.padStart(5, '0');
+
+                    const activity = match[3]?.trim() || 'Activity';
+                    const type = detectActivityType(activity);
+
+                    blockIndex++;
+                    schedule.push({
+                        id: `pdf-${blockIndex}`,
+                        start,
+                        end,
+                        activity,
+                        type
+                    });
+                    break;
+                }
+            }
+        });
+    }
+
+    // Sort by start time
+    schedule.sort((a, b) => a.start.localeCompare(b.start));
+
+    if (schedule.length === 0) {
+        throw new Error(
+            'Found text but no schedule entries.\n\n' +
+            'Make sure your PDF has times like:\n' +
+            '• "09:00 - 12:00 Study Session"\n' +
+            '• "2:00 PM - 5:00 PM Work"\n\n' +
+            'Or try the "Paste" tab instead.'
+        );
+    }
+
+    console.log('📄 Parsed PDF schedule:', schedule);
+    return schedule;
 };
 
 /**

@@ -146,7 +146,10 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({
             }
         } catch (error: any) {
             console.error('File parsing error:', error);
-            setErrors([error.message || 'Failed to parse file. Please check the format.']);
+            // Split multi-line error messages into array
+            const errorMessage = error.message || 'Failed to parse file. Please check the format.';
+            const errorLines = errorMessage.split('\n').filter((line: string) => line.trim());
+            setErrors(errorLines);
         } finally {
             setIsParsingFile(false);
             if (fileInputRef.current) {
