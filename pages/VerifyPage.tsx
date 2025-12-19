@@ -89,10 +89,12 @@ export const VerifyPage: React.FC<VerifyPageProps> = ({ logs, onVerificationComp
 
         {/* Interface Body */}
         <div className="flex flex-col md:flex-row h-auto md:h-[650px]">
-          {/* Sidebar / Timeline */}
-          <div className="w-full md:w-64 border-r bg-white/[0.01] flex flex-col border-white/5">
-            <div className="p-4 border-b border-white/5">
-              <div className="text-[10px] uppercase tracking-widest font-semibold text-slate-500 mb-2">Schedule</div>
+          {/* Sidebar / Timeline - Scrollable */}
+          <div className="w-full md:w-72 border-r bg-white/[0.01] flex flex-col border-white/5 md:max-h-[650px]">
+            <div className="p-4 border-b border-white/5 flex-shrink-0">
+              <div className="text-[10px] uppercase tracking-widest font-semibold text-slate-500">Schedule</div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
               <ScheduleTimeline currentBlock={currentBlock} logs={logs} />
             </div>
           </div>
