@@ -3,22 +3,23 @@ import { VerificationResult } from "../types";
 import { SYSTEM_PROMPT } from "../constants";
 
 // Initialize Gemini Client
-// Ensure API key is available and valid
-const apiKey = process.env.API_KEY;
+// API key is optional - app will still work, but AI verification will fail gracefully
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
 
-if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY' || apiKey.trim() === '') {
-  throw new Error(
-    '❌ GEMINI_API_KEY is missing or invalid!\n\n' +
-    'Please follow these steps:\n' +
+const isApiKeyValid = apiKey && apiKey !== 'PLACEHOLDER_API_KEY' && apiKey.trim() !== '';
+
+if (!isApiKeyValid) {
+  console.warn(
+    '⚠️ GEMINI_API_KEY is missing or invalid!\n\n' +
+    'AI verification features will not work.\n' +
+    'To enable AI features:\n' +
     '1. Get your API key from: https://aistudio.google.com/apikey\n' +
-    '2. Open the .env.local file in your project root\n' +
-    '3. Replace PLACEHOLDER_API_KEY with your actual API key\n' +
-    '4. Restart the dev server (npm run dev)\n\n' +
-    'Example: GEMINI_API_KEY=AIzaSyC...'
+    '2. Add VITE_GEMINI_API_KEY to your environment variables\n'
   );
 }
 
-const ai = new GoogleGenAI({ apiKey });
+// Create AI client only if key is valid
+const ai = isApiKeyValid ? new GoogleGenAI({ apiKey }) : null;
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -57,6 +58,17 @@ const fileToGenerativePart = async (file: File): Promise<{ inlineData: { data: s
  * Analyzes the video proof against the scheduled activity.
  */
 export const analyzeProof = async (videoFile: File, scheduledActivity: string): Promise<VerificationResult> => {
+  // Check if AI is available
+  if (!ai) {
+    console.warn('AI verification not available - API key not configured');
+    return {
+      task_verified: false,
+      focus_score: 0,
+      distractions_detected: ['API Key Not Configured'],
+      ai_critique: '⚠️ AI verification is not available. Please configure your GEMINI_API_KEY in Vercel environment variables to enable AI-powered verification.'
+    };
+  }
+
   try {
     // Using gemini-3-flash-preview for robust multimodal (video/image) understanding
     const model = "gemini-3-flash-preview";
