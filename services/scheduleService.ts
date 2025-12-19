@@ -188,3 +188,199 @@ export const validateSchedule = (schedule: ScheduleBlock[]): { valid: boolean; e
 
     return { valid: errors.length === 0, errors };
 };
+
+/**
+ * Parse Excel file into schedule blocks
+ */
+export const parseExcelFile = async (file: File): Promise<ScheduleBlock[]> => {
+    try {
+        const XLSX = await import('xlsx');
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+
+        // Get first sheet
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        // Convert to JSON
+        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as string[][];
+
+        const schedule: ScheduleBlock[] = [];
+        let blockIndex = 0;
+
+        // Process each row
+        data.forEach((row) => {
+            if (!row || row.length < 2) return;
+
+            // Try to find time and activity in the row
+            const rowText = row.join(' ');
+
+            // Try common patterns
+            // Pattern 1: Time range in one column, activity in another
+            // Pattern 2: All in one cell
+            const timePattern = /(\d{1,2}[:.]\d{2})\s*[-–to]+\s*(\d{1,2}[:.]\d{2})/;
+            const match = rowText.match(timePattern);
+
+            if (match) {
+                let start = match[1].replace('.', ':').padStart(5, '0');
+                let end = match[2].replace('.', ':').padStart(5, '0');
+
+                // Extract activity name (everything after the time)
+                const afterTime = rowText.substring(rowText.indexOf(match[0]) + match[0].length).trim();
+                const activity = afterTime || row.find(cell =>
+                    cell && typeof cell === 'string' &&
+                    !cell.match(/^\d{1,2}[:.]\d{2}/) &&
+                    cell.trim().length > 0
+                ) || 'Activity';
+
+                // Auto-detect activity type
+                let type = ActivityType.STUDY;
+                const lowerActivity = activity.toLowerCase();
+
+                if (lowerActivity.includes('workout') || lowerActivity.includes('gym') || lowerActivity.includes('exercise')) {
+                    type = ActivityType.WORKOUT;
+                } else if (lowerActivity.includes('class') || lowerActivity.includes('lecture')) {
+                    type = ActivityType.CLASS;
+                } else if (lowerActivity.includes('deep') || lowerActivity.includes('focus')) {
+                    type = ActivityType.DEEP_STUDY;
+                } else if (lowerActivity.includes('walk') || lowerActivity.includes('break') || lowerActivity.includes('rest') || lowerActivity.includes('lunch')) {
+                    type = ActivityType.WALK;
+                }
+
+                blockIndex++;
+                schedule.push({
+                    id: `excel-${blockIndex}`,
+                    start,
+                    end,
+                    activity: activity.trim(),
+                    type
+                });
+            }
+        });
+
+        // Sort by start time
+        schedule.sort((a, b) => a.start.localeCompare(b.start));
+
+        console.log('📊 Parsed Excel schedule:', schedule);
+        return schedule;
+    } catch (error) {
+        console.error('Error parsing Excel file:', error);
+        throw new Error('Failed to parse Excel file. Please check the format.');
+    }
+};
+
+/**
+ * Parse PDF file into schedule blocks
+ */
+export const parsePDFFile = async (file: File): Promise<ScheduleBlock[]> => {
+    try {
+        // Dynamically import pdfjs
+        const pdfjsLib = await import('pdfjs-dist');
+
+        // Set worker source
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+
+        let fullText = '';
+
+        // Extract text from all pages
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+                .map((item: any) => item.str)
+                .join(' ');
+            fullText += pageText + '\n';
+        }
+
+        console.log('📄 Extracted PDF text:', fullText.substring(0, 500));
+
+        // Parse the extracted text
+        const schedule = parseTimetableText(fullText);
+
+        // If simple parsing didn't work well, try more patterns
+        if (schedule.length === 0) {
+            // Try alternate patterns
+            const lines = fullText.split(/[\n\r]+/);
+            let blockIndex = 0;
+
+            lines.forEach(line => {
+                // Pattern: Time followed by activity
+                const patterns = [
+                    /(\d{1,2}[:.]\d{2})\s*(?:AM|PM|am|pm)?\s*[-–to]+\s*(\d{1,2}[:.]\d{2})\s*(?:AM|PM|am|pm)?\s*[:\-–\s]*(.+)/i,
+                    /(\d{1,2})\s*(?:AM|PM|am|pm)\s*[-–to]+\s*(\d{1,2})\s*(?:AM|PM|am|pm)\s*[:\-–\s]*(.+)/i,
+                ];
+
+                for (const pattern of patterns) {
+                    const match = line.match(pattern);
+                    if (match) {
+                        let start = match[1].replace('.', ':');
+                        let end = match[2].replace('.', ':');
+
+                        // Add :00 if only hour
+                        if (!start.includes(':')) start += ':00';
+                        if (!end.includes(':')) end += ':00';
+
+                        start = start.padStart(5, '0');
+                        end = end.padStart(5, '0');
+
+                        const activity = match[3]?.trim() || 'Activity';
+
+                        let type = ActivityType.STUDY;
+                        const lowerActivity = activity.toLowerCase();
+
+                        if (lowerActivity.includes('workout') || lowerActivity.includes('gym') || lowerActivity.includes('exercise')) {
+                            type = ActivityType.WORKOUT;
+                        } else if (lowerActivity.includes('class') || lowerActivity.includes('lecture')) {
+                            type = ActivityType.CLASS;
+                        } else if (lowerActivity.includes('deep') || lowerActivity.includes('focus')) {
+                            type = ActivityType.DEEP_STUDY;
+                        } else if (lowerActivity.includes('walk') || lowerActivity.includes('break') || lowerActivity.includes('rest')) {
+                            type = ActivityType.WALK;
+                        }
+
+                        blockIndex++;
+                        schedule.push({
+                            id: `pdf-${blockIndex}`,
+                            start,
+                            end,
+                            activity,
+                            type
+                        });
+                        break;
+                    }
+                }
+            });
+        }
+
+        // Sort by start time
+        schedule.sort((a, b) => a.start.localeCompare(b.start));
+
+        console.log('📄 Parsed PDF schedule:', schedule);
+        return schedule;
+    } catch (error) {
+        console.error('Error parsing PDF file:', error);
+        throw new Error('Failed to parse PDF file. Please check the format.');
+    }
+};
+
+/**
+ * Parse uploaded file (supports Excel, PDF, and text files)
+ */
+export const parseScheduleFile = async (file: File): Promise<ScheduleBlock[]> => {
+    const fileName = file.name.toLowerCase();
+
+    if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        return parseExcelFile(file);
+    } else if (fileName.endsWith('.pdf')) {
+        return parsePDFFile(file);
+    } else if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) {
+        const text = await file.text();
+        return parseTimetableText(text);
+    } else {
+        throw new Error('Unsupported file format. Please upload PDF, Excel, or text files.');
+    }
+};
