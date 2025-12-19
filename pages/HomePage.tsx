@@ -244,13 +244,6 @@ export const HomePage: React.FC<HomePageProps> = ({ logs, onEditSchedule }) => {
                             Learn How It Works
                         </button>
                     </div>
-
-                    {/* Stats Section - Mobile Responsive */}
-                    <div className={`grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-xl mx-auto mb-20 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-                        <StatCounter value={totalTasks} suffix=" tasks" label="In Your Schedule" icon="lucide:calendar-check" />
-                        <StatCounter value={completedTasks} suffix="" label="Verified Today" icon="lucide:check-circle" />
-                        <StatCounter value={totalFocusPoints} suffix=" pts" label="Focus Points" icon="lucide:zap" />
-                    </div>
                 </div>
 
                 {/* Demo Preview Card */}
