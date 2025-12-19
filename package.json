@@ -1,0 +1,31 @@
+{
+  "name": "the-1%-accountability-engine",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "email-server": "node server/email-server.cjs",
+    "dev:all": "npm run email-server & npm run dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emailjs/browser": "^4.4.1",
+    "@google/genai": "^1.34.0",
+    "@supabase/supabase-js": "^2.89.0",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "nodemailer": "^7.0.11",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "^7.11.0",
+    "recharts": "2.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

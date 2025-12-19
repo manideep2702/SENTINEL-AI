@@ -1,0 +1,8 @@
+{
+  "name": "The 1% Accountability Engine",
+  "description": "A high-performance dashboard for tracking daily routines via AI video verification. Upload proof of work, get graded on focus, and receive ruthless feedback from your AI Personal Assistant.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
