@@ -273,64 +273,12 @@ export const HomePage: React.FC<HomePageProps> = ({ logs, onEditSchedule }) => {
                             </div>
                         </div>
 
-                        {/* Mock Dashboard Content - Enhanced Cards */}
-                        <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Card 1 */}
-                            <div className="dashboard-card shimmer">
-                                <div className="flex items-center gap-4 mb-5">
-                                    <div className="p-3 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                                        <iconify-icon icon="lucide:brain" width="24"></iconify-icon>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-base font-semibold text-white">AI Analysis</h3>
-                                        <p className="text-xs text-slate-400">Real-time verification</p>
-                                    </div>
-                                </div>
-                                <div className="text-3xl font-bold text-white mb-2 counter-value">SENTINEL AI</div>
-                                <p className="text-sm text-slate-300">Flash Processing</p>
-                            </div>
-
-                            {/* Card 2 */}
-                            <div className="dashboard-card shimmer">
-                                <div className="flex items-center gap-4 mb-5">
-                                    <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                        <iconify-icon icon="lucide:check-circle-2" width="24"></iconify-icon>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-base font-semibold text-white">Verified Today</h3>
-                                        <p className="text-xs text-slate-400">Completed activities</p>
-                                    </div>
-                                </div>
-                                <div className="text-3xl font-bold text-white mb-3 counter-value">
-                                    {completedTasks}/{totalTasks || '-'}
-                                </div>
-                                <div className="progress-bar">
-                                    <div className="progress-fill" style={{ width: `${completionPercent}%` }}></div>
-                                </div>
-                            </div>
-
-                            {/* Card 3 */}
-                            <div className="dashboard-card shimmer">
-                                <div className="flex items-center gap-4 mb-5">
-                                    <div className="p-3 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                                        <iconify-icon icon="lucide:flame" width="24"></iconify-icon>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-base font-semibold text-white">Focus Score</h3>
-                                        <p className="text-xs text-slate-400">Average performance</p>
-                                    </div>
-                                </div>
-                                <div className="text-3xl font-bold text-white mb-2 counter-value">{avgFocusScore}/10</div>
-                                <p className={`text-sm font-medium flex items-center gap-1 ${Number(avgFocusScore) >= 7 ? 'text-emerald-400' : Number(avgFocusScore) >= 5 ? 'text-amber-400' : 'text-slate-500'}`}>
-                                    {completedTasks > 0 ? (
-                                        <>
-                                            <iconify-icon icon={Number(avgFocusScore) >= 7 ? "lucide:trending-up" : "lucide:minus"} width="14"></iconify-icon>
-                                            {totalFocusPoints} total points
-                                        </>
-                                    ) : (
-                                        <span className="text-slate-500">Complete tasks to see score</span>
-                                    )}
-                                </p>
+                        {/* Mock Dashboard Content - Removed cards */}
+                        <div className="p-8">
+                            <div className="text-center py-12">
+                                <iconify-icon icon="lucide:sparkles" width="48" className="text-purple-400 mb-4"></iconify-icon>
+                                <h3 className="text-xl font-semibold text-white mb-2">AI-Powered Accountability</h3>
+                                <p className="text-slate-400">Upload proof, get instant verification, stay on track</p>
                             </div>
                         </div>
                     </div>
