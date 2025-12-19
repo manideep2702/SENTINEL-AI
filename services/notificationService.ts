@@ -137,11 +137,43 @@ export const sendEmailReminder = async (
     taskTime: string,
     minutesBefore: number
 ): Promise<boolean> => {
-    // Skip localhost check if not in development
     const isDevelopment = window.location.hostname === 'localhost';
 
+    // Try Supabase Edge Function first (Gmail SMTP - works in production)
+    try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        if (supabaseUrl && supabaseKey) {
+            const response = await fetch(`${supabaseUrl}/functions/v1/send-task-reminder`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseKey}`,
+                },
+                body: JSON.stringify({
+                    to: userEmail,
+                    userName: userName || 'User',
+                    taskName: taskName,
+                    taskTime: taskTime,
+                    minutesBefore: minutesBefore
+                })
+            });
+
+            if (response.ok) {
+                console.log('✅ Email sent via Supabase Edge Function (Gmail SMTP)');
+                return true;
+            } else {
+                const error = await response.json();
+                console.warn('⚠️ Supabase Edge Function failed:', error);
+            }
+        }
+    } catch (edgeFunctionErr) {
+        console.log('📧 Supabase Edge Function not available, trying alternatives...');
+    }
+
     if (isDevelopment) {
-        // Try local email server first (Gmail SMTP via backend) - only in development
+        // Try local email server (Gmail SMTP via backend) - only in development
         try {
             const response = await fetch('http://localhost:3001/api/send-reminder', {
                 method: 'POST',
@@ -156,7 +188,7 @@ export const sendEmailReminder = async (
             });
 
             if (response.ok) {
-                console.log('✅ Email sent via Gmail SMTP server');
+                console.log('✅ Email sent via local Gmail SMTP server');
                 return true;
             }
         } catch (serverErr) {
