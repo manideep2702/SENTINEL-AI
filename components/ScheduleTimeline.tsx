@@ -1,6 +1,6 @@
 import React from 'react';
-import { DAILY_SCHEDULE } from '../constants';
 import { ScheduleBlock } from '../types';
+import { useSchedule } from '../contexts/ScheduleContext';
 
 interface ScheduleTimelineProps {
   currentBlock: ScheduleBlock | null;
@@ -8,7 +8,17 @@ interface ScheduleTimelineProps {
 }
 
 export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ currentBlock, logs }) => {
+  const { schedule } = useSchedule();
   const isCurrent = (block: ScheduleBlock) => currentBlock?.id === block.id;
+
+  if (schedule.length === 0) {
+    return (
+      <div className="text-center py-8 text-slate-500">
+        <iconify-icon icon="lucide:calendar-x" width="32" className="mb-2 opacity-50"></iconify-icon>
+        <p className="text-xs">No schedule set up yet</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative pl-2">
@@ -16,7 +26,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ currentBlock
       <div className="absolute left-[11px] top-2 bottom-6 w-px bg-gradient-to-b from-green-500 via-teal-500 to-transparent opacity-30"></div>
 
       <div className="flex flex-col gap-8">
-        {DAILY_SCHEDULE.map((block) => {
+        {schedule.map((block) => {
           const active = isCurrent(block);
           const log = logs[block.id];
           const isVerified = log?.result?.task_verified;

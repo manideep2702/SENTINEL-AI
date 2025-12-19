@@ -141,3 +141,41 @@ CREATE POLICY "Users can delete own files" ON storage.objects
         bucket_id = 'verification-uploads' AND
         auth.uid()::text = (storage.foldername(name))[1]
     );
+
+-- ==============================================
+-- USER SCHEDULES TABLE (Custom Timetables)
+-- ==============================================
+
+-- 11. Create user_schedules table for custom timetables
+CREATE TABLE IF NOT EXISTS user_schedules (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+    schedule JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 12. Create index for user_schedules
+CREATE INDEX IF NOT EXISTS idx_user_schedules_user_id ON user_schedules(user_id);
+
+-- 13. Enable RLS on user_schedules
+ALTER TABLE user_schedules ENABLE ROW LEVEL SECURITY;
+
+-- 14. Create RLS policies for user_schedules
+CREATE POLICY "Users can view own schedule" ON user_schedules
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own schedule" ON user_schedules
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own schedule" ON user_schedules
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own schedule" ON user_schedules
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- 15. Create trigger for user_schedules updated_at
+CREATE TRIGGER update_user_schedules_updated_at
+    BEFORE UPDATE ON user_schedules
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

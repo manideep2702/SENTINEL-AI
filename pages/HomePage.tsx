@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSchedule } from '../contexts/ScheduleContext';
 import { NotificationSettings } from '../components/NotificationSettings';
 
 interface HomePageProps {
     logs: Record<string, { result: any }>;
     onVerificationComplete: (blockId: string, result: any) => void;
+    onEditSchedule?: () => void;
 }
 
 // Counter animation hook
@@ -42,9 +44,10 @@ const StatCounter: React.FC<{ value: number; suffix?: string; label: string; ico
     );
 };
 
-export const HomePage: React.FC<HomePageProps> = ({ logs }) => {
+export const HomePage: React.FC<HomePageProps> = ({ logs, onEditSchedule }) => {
     const navigate = useNavigate();
     const { user, signOut } = useAuth();
+    const { schedule } = useSchedule();
     const [isLoaded, setIsLoaded] = useState(false);
     const [showNotificationSettings, setShowNotificationSettings] = useState(false);
 
@@ -155,6 +158,14 @@ export const HomePage: React.FC<HomePageProps> = ({ logs }) => {
                                         <iconify-icon icon="lucide:bell" width="14"></iconify-icon>
                                         Notification Settings
                                     </button>
+                                    <button
+                                        onClick={() => onEditSchedule?.()}
+                                        className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-white/5 hover:text-white flex items-center gap-2"
+                                    >
+                                        <iconify-icon icon="lucide:calendar-cog" width="14"></iconify-icon>
+                                        Edit Schedule
+                                    </button>
+                                    <div className="border-t border-white/10 my-1"></div>
                                     <button
                                         onClick={signOut}
                                         className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"

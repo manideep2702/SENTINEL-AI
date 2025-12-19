@@ -3,7 +3,7 @@ import { ScheduleBlock, VerificationResult } from '../types';
 import { analyzeProof } from '../services/geminiService';
 import { completeVerification } from '../services/verificationService';
 import { useAuth } from '../contexts/AuthContext';
-import { DAILY_SCHEDULE } from '../constants';
+import { useSchedule } from '../contexts/ScheduleContext';
 
 interface UploaderProps {
     currentBlock: ScheduleBlock | null;
@@ -18,6 +18,7 @@ interface FileWithPreview {
 
 export const Uploader: React.FC<UploaderProps> = ({ currentBlock, onVerificationComplete }) => {
     const { user } = useAuth();
+    const { schedule } = useSchedule();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [files, setFiles] = useState<FileWithPreview[]>([]);
@@ -76,7 +77,7 @@ export const Uploader: React.FC<UploaderProps> = ({ currentBlock, onVerification
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            const newFiles: FileWithPreview[] = Array.from(e.target.files).map(file => ({
+            const newFiles: FileWithPreview[] = Array.from(e.target.files).map((file: File) => ({
                 file,
                 previewUrl: URL.createObjectURL(file),
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -277,13 +278,13 @@ export const Uploader: React.FC<UploaderProps> = ({ currentBlock, onVerification
                             <select
                                 value={selectedBlock?.id || ''}
                                 onChange={(e) => {
-                                    const block = DAILY_SCHEDULE.find(b => b.id === e.target.value);
+                                    const block = schedule.find(b => b.id === e.target.value);
                                     setSelectedBlock(block || null);
                                 }}
                                 className="w-full px-3 py-2 bg-[#050505] border border-white/10 rounded-md text-sm text-white focus:border-purple-500/50 focus:outline-none transition-colors"
                             >
                                 <option value="">Choose an activity...</option>
-                                {DAILY_SCHEDULE.map(block => (
+                                {schedule.map(block => (
                                     <option key={block.id} value={block.id}>
                                         {block.activity} ({block.start} - {block.end})
                                     </option>
@@ -441,8 +442,8 @@ export const Uploader: React.FC<UploaderProps> = ({ currentBlock, onVerification
                                         key={f.id}
                                         onClick={() => setCurrentFileIndex(index)}
                                         className={`relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${index === currentFileIndex
-                                                ? 'border-purple-500 ring-2 ring-purple-500/30'
-                                                : 'border-white/10 hover:border-white/30'
+                                            ? 'border-purple-500 ring-2 ring-purple-500/30'
+                                            : 'border-white/10 hover:border-white/30'
                                             }`}
                                     >
                                         {f.file.type.startsWith('video') ? (

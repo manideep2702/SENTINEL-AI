@@ -2,21 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ScheduleTimeline } from '../components/ScheduleTimeline';
 import { Uploader } from '../components/Uploader';
 import { Dashboard } from '../components/Dashboard';
-import { DAILY_SCHEDULE } from '../constants';
+import { useSchedule } from '../contexts/ScheduleContext';
 import { ScheduleBlock, VerificationResult, DailyStats } from '../types';
-
-const getCurrentBlock = (): ScheduleBlock | null => {
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-
-  return DAILY_SCHEDULE.find(block => {
-    const [startH, startM] = block.start.split(':').map(Number);
-    const [endH, endM] = block.end.split(':').map(Number);
-    const startTotal = startH * 60 + startM;
-    const endTotal = endH * 60 + endM;
-    return currentTime >= startTotal && currentTime < endTotal;
-  }) || null;
-};
 
 interface VerifyPageProps {
   logs: Record<string, { result: VerificationResult }>;
@@ -24,22 +11,35 @@ interface VerifyPageProps {
 }
 
 export const VerifyPage: React.FC<VerifyPageProps> = ({ logs, onVerificationComplete }) => {
+  const { schedule } = useSchedule();
   const [currentBlock, setCurrentBlock] = useState<ScheduleBlock | null>(null);
   const [lastResult, setLastResult] = useState<VerificationResult | null>(null);
 
+  // Get current block based on time and user's schedule
+  const getCurrentBlock = (): ScheduleBlock | null => {
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    return schedule.find(block => {
+      const [startH, startM] = block.start.split(':').map(Number);
+      const [endH, endM] = block.end.split(':').map(Number);
+      const startTotal = startH * 60 + startM;
+      const endTotal = endH * 60 + endM;
+      return currentTime >= startTotal && currentTime < endTotal;
+    }) || null;
+  };
+
   const stats: DailyStats = useMemo(() => {
-    // Explicitly type entries to ensure TS knows the shape
     const entries: { result: VerificationResult }[] = Object.values(logs);
-    const totalBlocks = DAILY_SCHEDULE.length;
+    const totalBlocks = schedule.length;
     const completedBlocks = entries.filter(e => e.result.task_verified).length;
     const totalFocusPoints = entries.reduce((acc, curr) => acc + (curr.result.focus_score || 0), 0);
     const consistencyScore = totalBlocks > 0
       ? Math.round((completedBlocks / Math.max(1, entries.length)) * 100)
       : 0;
     return { consistencyScore, totalFocusPoints, completedBlocks, totalBlocks };
-  }, [logs]);
+  }, [logs, schedule]);
 
-  // Compute history for the dashboard chart
   const history = useMemo(() => {
     return Object.entries(logs)
       .map(([blockId, entry]) => ({
@@ -53,7 +53,7 @@ export const VerifyPage: React.FC<VerifyPageProps> = ({ logs, onVerificationComp
     setCurrentBlock(getCurrentBlock());
     const interval = setInterval(() => setCurrentBlock(getCurrentBlock()), 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [schedule]);
 
   const handleVerificationComplete = (blockId: string, result: VerificationResult) => {
     onVerificationComplete(blockId, result);
