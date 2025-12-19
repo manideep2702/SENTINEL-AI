@@ -73,7 +73,12 @@ export const HomePage: React.FC<HomePageProps> = ({ logs, onEditSchedule }) => {
         }
     };
 
+    // Calculate stats from actual user data
+    const totalTasks = schedule.length;
     const completedTasks = Object.values(logs).filter((l: any) => l.result?.task_verified).length;
+    const totalFocusPoints: number = Object.values(logs).reduce<number>((acc, l: any) => acc + (l.result?.focus_score || 0), 0);
+    const avgFocusScore = completedTasks > 0 ? (totalFocusPoints / completedTasks).toFixed(1) : '0.0';
+    const completionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     return (
         <div className="min-h-screen text-slate-400 selection:bg-purple-500/30 selection:text-purple-200">
@@ -242,9 +247,9 @@ export const HomePage: React.FC<HomePageProps> = ({ logs, onEditSchedule }) => {
 
                     {/* Stats Section - Mobile Responsive */}
                     <div className={`grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-xl mx-auto mb-20 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-                        <StatCounter value={99} suffix="%" label="Accuracy" icon="lucide:target" />
-                        <StatCounter value={completedTasks || 24} suffix="" label="Tasks Verified" icon="lucide:check-circle" />
-                        <StatCounter value={10} suffix="x" label="Productivity" icon="lucide:zap" />
+                        <StatCounter value={totalTasks} suffix=" tasks" label="In Your Schedule" icon="lucide:calendar-check" />
+                        <StatCounter value={completedTasks} suffix="" label="Verified Today" icon="lucide:check-circle" />
+                        <StatCounter value={totalFocusPoints} suffix=" pts" label="Focus Points" icon="lucide:zap" />
                     </div>
                 </div>
 
@@ -303,9 +308,11 @@ export const HomePage: React.FC<HomePageProps> = ({ logs, onEditSchedule }) => {
                                         <p className="text-xs text-slate-400">Completed activities</p>
                                     </div>
                                 </div>
-                                <div className="text-3xl font-bold text-white mb-3 counter-value">{completedTasks || 6}/6</div>
+                                <div className="text-3xl font-bold text-white mb-3 counter-value">
+                                    {completedTasks}/{totalTasks || '-'}
+                                </div>
                                 <div className="progress-bar">
-                                    <div className="progress-fill" style={{ width: `${((completedTasks || 6) / 6) * 100}%` }}></div>
+                                    <div className="progress-fill" style={{ width: `${completionPercent}%` }}></div>
                                 </div>
                             </div>
 
@@ -320,10 +327,16 @@ export const HomePage: React.FC<HomePageProps> = ({ logs, onEditSchedule }) => {
                                         <p className="text-xs text-slate-400">Average performance</p>
                                     </div>
                                 </div>
-                                <div className="text-3xl font-bold text-white mb-2 counter-value">9.2/10</div>
-                                <p className="text-sm text-emerald-400 font-medium flex items-center gap-1">
-                                    <iconify-icon icon="lucide:trending-up" width="14"></iconify-icon>
-                                    15% from yesterday
+                                <div className="text-3xl font-bold text-white mb-2 counter-value">{avgFocusScore}/10</div>
+                                <p className={`text-sm font-medium flex items-center gap-1 ${Number(avgFocusScore) >= 7 ? 'text-emerald-400' : Number(avgFocusScore) >= 5 ? 'text-amber-400' : 'text-slate-500'}`}>
+                                    {completedTasks > 0 ? (
+                                        <>
+                                            <iconify-icon icon={Number(avgFocusScore) >= 7 ? "lucide:trending-up" : "lucide:minus"} width="14"></iconify-icon>
+                                            {totalFocusPoints} total points
+                                        </>
+                                    ) : (
+                                        <span className="text-slate-500">Complete tasks to see score</span>
+                                    )}
                                 </p>
                             </div>
                         </div>
