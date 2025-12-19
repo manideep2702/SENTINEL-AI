@@ -9,12 +9,24 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    base: './',
+    base: '/',
     server: {
       port: 3000,
       host: '0.0.0.0',
       fs: {
         strict: false
+      }
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            charts: ['recharts']
+          }
+        }
       }
     },
     plugins: [react()],
