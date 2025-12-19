@@ -137,29 +137,34 @@ export const sendEmailReminder = async (
     taskTime: string,
     minutesBefore: number
 ): Promise<boolean> => {
-    // Try local email server first (Gmail SMTP via backend)
-    try {
-        const response = await fetch('http://localhost:3001/api/send-reminder', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                to: userEmail,
-                userName: userName || 'User',
-                taskName: taskName,
-                taskTime: taskTime,
-                minutesBefore: minutesBefore
-            })
-        });
+    // Skip localhost check if not in development
+    const isDevelopment = window.location.hostname === 'localhost';
 
-        if (response.ok) {
-            console.log('✅ Email sent via Gmail SMTP server');
-            return true;
+    if (isDevelopment) {
+        // Try local email server first (Gmail SMTP via backend) - only in development
+        try {
+            const response = await fetch('http://localhost:3001/api/send-reminder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: userEmail,
+                    userName: userName || 'User',
+                    taskName: taskName,
+                    taskTime: taskTime,
+                    minutesBefore: minutesBefore
+                })
+            });
+
+            if (response.ok) {
+                console.log('✅ Email sent via Gmail SMTP server');
+                return true;
+            }
+        } catch (serverErr) {
+            console.log('📧 Local email server not running, trying EmailJS...');
         }
-    } catch (serverErr) {
-        console.log('📧 Email server not running, trying EmailJS...');
     }
 
-    // Try EmailJS if configured
+    // Try EmailJS (works in production)
     try {
         if (EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
             const templateParams = {
@@ -180,14 +185,19 @@ export const sendEmailReminder = async (
 
             console.log('✅ Email sent via EmailJS:', response.status);
             return true;
+        } else {
+            console.warn('⚠️ EmailJS not configured');
+            console.log('📧 To enable email reminders, set up EmailJS:');
+            console.log('   1. Sign up at https://www.emailjs.com');
+            console.log('   2. Add VITE_EMAILJS_* variables to .env.local');
+            console.log('   3. See docs/EMAILJS_SETUP.md for details');
         }
     } catch (emailjsErr) {
-        console.error('EmailJS failed:', emailjsErr);
+        console.error('❌ EmailJS failed:', emailjsErr);
     }
 
-    // Log only if no email service available
-    console.warn('⚠️ No email service configured');
-    console.log(`📧 Would send to: ${userEmail} - Task: ${taskName} at ${taskTime}`);
+    // Log what would have been sent
+    console.log(`📧 Email reminder: ${userEmail} - ${taskName} at ${taskTime}`);
     return true; // Return true to continue with browser notification
 };
 
