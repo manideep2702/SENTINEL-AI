@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSchedule } from '../contexts/ScheduleContext';
 import { fetchVerificationsByDate, VerificationRecord } from '../services/verificationService';
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
@@ -191,6 +192,7 @@ const Calendar: React.FC<{
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ logs }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { schedule } = useSchedule();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(false);
     const [dateVerifications, setDateVerifications] = useState<VerificationRecord[]>([]);
@@ -247,6 +249,43 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ logs }) => {
             return { totalTasks, completedTasks, avgFocus, successRate, totalFocus };
         }
     }, [logs, dateVerifications, isToday]);
+
+    // Generate activity breakdown from user's actual schedule
+    const dynamicActivityBreakdown = useMemo(() => {
+        const activityColors: Record<string, string> = {
+            'Workout': '#10b981', 'Gym': '#10b981', 'Yoga': '#14b8a6', 'Walk': '#ec4899',
+            'Running': '#f97316', 'Sports': '#22c55e', 'Class': '#3b82f6', 'Lecture': '#6366f1',
+            'Study': '#f59e0b', 'Deep Study': '#a855f7', 'Reading': '#8b5cf6', 'Work': '#0ea5e9',
+            'Meeting': '#06b6d4', 'Coding': '#84cc16', 'Morning Routine': '#fbbf24',
+            'Breakfast': '#fb923c', 'Lunch': '#f97316', 'Dinner': '#ef4444', 'Break': '#94a3b8',
+            'Meditation': '#8b5cf6', 'Commute': '#64748b', 'Other': '#a855f7'
+        };
+
+        // Count activities by type
+        const typeCounts: Record<string, number> = {};
+        schedule.forEach(block => {
+            const type = block.type || 'Other';
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+        });
+
+        return Object.entries(typeCounts).map(([name, value]) => ({
+            name,
+            value,
+            color: activityColors[name] || '#a855f7'
+        }));
+    }, [schedule]);
+
+    // Generate task-based data for today
+    const taskFocusData = useMemo(() => {
+        return schedule.map(block => {
+            const log = logs[block.id];
+            return {
+                name: block.activity?.substring(0, 10) || 'Task',
+                score: log?.result?.focus_score || 0,
+                time: block.start
+            };
+        });
+    }, [schedule, logs]);
 
     return (
         <div className="min-h-screen bg-[#020204] text-slate-400">
@@ -427,7 +466,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ logs }) => {
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
-                                        data={activityBreakdown}
+                                        data={dynamicActivityBreakdown}
                                         cx="50%"
                                         cy="50%"
                                         labelLine={false}
@@ -436,7 +475,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ logs }) => {
                                         fill="#8884d8"
                                         dataKey="value"
                                     >
-                                        {activityBreakdown.map((entry, index) => (
+                                        {dynamicActivityBreakdown.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
@@ -446,23 +485,23 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ logs }) => {
                         </div>
                     </div>
 
-                    {/* Hourly Focus Pattern */}
+                    {/* Task Focus Scores */}
                     <div className="rounded-lg border bg-[#0a0a0c] border-white/5 p-6 hover:border-purple-500/20 transition-colors">
                         <div className="flex justify-between items-start mb-6">
                             <div>
-                                <h3 className="text-lg font-medium text-white mb-1">Hourly Focus Pattern</h3>
-                                <p className="text-xs text-slate-500">Peak performance hours</p>
+                                <h3 className="text-lg font-medium text-white mb-1">Task Focus Scores</h3>
+                                <p className="text-xs text-slate-500">Focus score per activity</p>
                             </div>
-                            <iconify-icon icon="lucide:clock" width="20" className="text-purple-400"></iconify-icon>
+                            <iconify-icon icon="lucide:bar-chart-3" width="20" className="text-purple-400"></iconify-icon>
                         </div>
                         <div className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={hourlyFocus}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                    <XAxis dataKey="hour" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} domain={[0, 10]} />
+                                <BarChart data={taskFocusData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
+                                    <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={80} />
                                     <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="score" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="score" fill="#a855f7" radius={[0, 4, 4, 0]} background={{ fill: '#ffffff08' }} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
