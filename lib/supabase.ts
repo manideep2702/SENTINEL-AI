@@ -5,12 +5,24 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Get the correct redirect URL based on environment
+const getRedirectUrl = () => {
+    // In production (Vercel), use the actual deployed URL
+    if (typeof window !== 'undefined') {
+        return window.location.origin;
+    }
+    return 'http://localhost:3000';
+};
+
 // Google Sign In
 export const signInWithGoogle = async () => {
+    const redirectUrl = getRedirectUrl();
+    console.log('OAuth redirecting to:', redirectUrl);
+
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: `${window.location.origin}/`,
+            redirectTo: redirectUrl,
             queryParams: {
                 access_type: 'offline',
                 prompt: 'consent',
